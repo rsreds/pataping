@@ -13,6 +13,7 @@
         --down: #dc2626;
         --error: #6b7280;
         --card-bg: rgba(0,0,0,0.02);
+        --shadow: rgba(0,0,0,0.3);
       }
       @media (prefers-color-scheme: dark){
         :root{
@@ -23,6 +24,7 @@
           --down: #fb7185;
           --error: #94a3b8;
           --card-bg: rgba(255,255,255,0.03);
+          --shadow: rgba(255,255,255,0.2);
         }
       }
 
@@ -34,6 +36,7 @@
         --down: #fb7185;
         --error: #94a3b8;
         --card-bg: rgba(255,255,255,0.03);
+        --shadow: rgba(255,255,255,0.2);
       }
       [data-theme="light"]{
         --bg: #ffffff;
@@ -43,35 +46,63 @@
         --down: #dc2626;
         --error: #6b7280;
         --card-bg: rgba(0,0,0,0.02);
+        --shadow: rgba(0,0,0,0.3);
       }
 
-      body { font-family: "Helvetica Neue", Arial, sans-serif; padding: 3rem; display: flex; flex-direction: column; align-items: center; background: var(--bg); color: var(--fg); }
-      .host { display:flex; align-items:center; align-content: center; gap:12px; padding:8px 0; width: 720px; max-width: calc(100% - 48px); }
-      .label { padding:6px 8px; border-radius:6px; color:white; font-weight:600; display:inline-block; min-width:32px; text-align:center; max-width: fit-content;  }
+      body { font-family: "Helvetica Neue", Arial, sans-serif; padding: 3rem; background: var(--bg); color: var(--fg); display: flex; flex-direction: column; align-items: center;}
+      .box { position: relative; gap:1rem; border-color: var(--muted); border-radius: 1rem; border-style: solid; border-width: 0.0625rem; box-shadow: var(--shadow) 0 0 0.625rem;}
+    .box { position: relative; gap:1rem; border-color: var(--muted); border-radius: 1rem; border-style: solid; border-width: 0.0625rem; padding: 1rem; width: min(45rem, calc(100% - 3rem)); box-sizing: border-box; }
+      .container {display: flex; flex-direction: column; align-items: center;}
+      .host { display:flex; align-items:center; align-content: center; gap:0.75rem; padding:0.5rem 0; width: 45rem; max-width: calc(100% - 3rem); }
+      .label { padding:0.375rem 0.5rem; border-radius:0.375rem; color:white; font-weight:600; display:inline-block; min-width:2rem; text-align:center; max-width: fit-content;  }
       /* host row: two columns
         - .label-col : fixed width column that right-aligns the status label
         - .content : flexible column that left-aligns the host/name and meta info
       */
-      .label-col { width: 180px; /* adjust as needed */ display:flex; justify-content:flex-end; }
-      .content { flex:1; text-align:left; background: var(--card-bg); padding:8px 12px; border-radius:6px; }
+      .label-col { width: 11.25rem; /* adjust as needed */ display:flex; justify-content:flex-end; }
+      .content { flex:1; text-align:left; background: var(--card-bg); padding:0.5rem 0.75rem; border-radius:0.375rem; }
+        .theme-toggle { position: absolute; top: 0.75rem; right: 0.75rem; z-index: 10; background: transparent; border: 0.0625rem solid rgba(0,0,0,0.06); color: var(--fg); padding:0.375rem 0.625rem; border-radius:0.5rem; cursor:pointer; }
+        [data-theme="dark"] .theme-toggle { border-color: rgba(255,255,255,0.06); }
+
+        /* Responsive tweaks for small screens / phones */
+        @media (max-width: 48.75rem) {
+          body { padding: 1rem; }
+          .box { padding: 0.75rem; width: calc(100% - 1.5rem); border-radius: 0.75rem; }
+          .theme-toggle { top: 0.5rem; right: 0.5rem; padding:0.5rem; }
+          .container { align-items: stretch; }
+          /* keep label and hostname inline while allowing wrapping
+             - use flex-wrap so label and content sit on same row when possible
+             - allow content to shrink/wrap below when space runs out
+          */
+          .host { display:flex; flex-wrap:wrap; align-items:center; gap:0.5rem; padding:0.375rem 0; width:100%; max-width:100%; }
+          .label-col { width: auto; display:flex; justify-content:flex-start; }
+          .label { min-width: unset; text-align: left; padding:0.375rem 0.5rem; margin-right:0.5rem; }
+          .content { padding:0.5rem; flex:1 1 auto; min-width:0; }
+          .content strong { display:inline; }
+          .meta { font-size:0.75rem; }
+          h1 { font-size:1.25rem; margin:0 0 0.5rem 0; }
+        }
       .up { background: var(--up); }
       .down { background: var(--down); }
       .error { background: var(--error); }
       .meta { color:var(--muted); font-size:0.8rem; }
 
       /* theme toggle button */
-      .theme-toggle { position: fixed; top: 12px; right: 12px; background: transparent; border: 1px solid rgba(0,0,0,0.06); color: var(--fg); padding:6px 10px; border-radius:8px; cursor:pointer; }
-      [data-theme="dark"] .theme-toggle { border-color: rgba(255,255,255,0.06); }
+  .theme-toggle { position: absolute; top: 0.75rem; right: 0.75rem; z-index: 10; background: transparent; border: 0.0625rem solid rgba(0,0,0,0.06); color: var(--fg); padding:0.375rem 0.625rem; border-radius:0.5rem; cursor:pointer; }
+  [data-theme="dark"] .theme-toggle { border-color: rgba(255,255,255,0.06); }
     </style>
   </head>
   <body>
+    <div class="box">
     <button id="themeToggle" class="theme-toggle" aria-pressed="false">🌓</button>
-    <h1>PATAPING</h1>
-    <p class="meta">Auto-refresh every 30s. Hosts are read from <code>hosts.txt</code> in the repo.</p>
-    <div id="last"></div>
-    <div id="list"></div>
-    <p class="meta">In case of issues, please write in the <a href="https://mattermost.web.cern.ch/patatrack/channels/town-square" style="color: var(--down); text-decoration: underline;">patatrack</a> mattermost channel</p>
-
+    <div class="container">
+        <h1>PATAPING</h1>
+        <p class="meta">Auto-refresh every 30s. Hosts are read from <code>hosts.txt</code> in the repo.</p>
+        <div id="last"></div>
+        <div id="list"></div>
+        <p class="meta">In case of issues, please write in the <a href="https://mattermost.web.cern.ch/patatrack/channels/town-square" style="color: var(--down); text-decoration: underline;">patatrack</a> mattermost channel</p>
+    </div>
+    </div>
     <script>
       // Theme handling: respect saved choice, otherwise follow prefers-color-scheme
       const THEME_KEY = 'pataping:theme';
