@@ -5,7 +5,7 @@
 # or just the host/IP alone:
 #   8.8.8.8
 
-localhost 127.0.0.1
+patatrack01 patatrack01.cern.ch
 patatrack02 patatrack02.cern.ch
 patatrack03 patatrack03.cern.ch
 patatrack-bg-01 patatrack-bg-01.cern.ch
