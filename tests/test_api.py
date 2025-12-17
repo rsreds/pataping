@@ -19,3 +19,8 @@ def test_api_status_empty_hosts(monkeypatch, tmp_path):
     data = res.get_json()
     assert 'results' in data
     assert isinstance(data['results'], list)
+    # ensure each result has required keys
+    for it in data['results']:
+        assert 'host' in it
+        assert 'status' in it
+        assert 'name' in it

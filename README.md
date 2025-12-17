@@ -18,7 +18,14 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-2. Edit `hosts.txt` with the hosts you want to monitor (one per line).
+2. Edit `hosts.txt` with the hosts you want to monitor (one per line). You may optionally provide a name before the host/IP, e.g.:
+
+```
+localhost 127.0.0.1
+8.8.8.8
+```
+
+If a name is provided, the UI shows the name in bold and the host next to it; otherwise the host is shown in bold.
 
 3. Run the app:
 

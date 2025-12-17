@@ -1,4 +1,11 @@
-# Example hosts to monitor (one per line). Lines starting with # are comments.
-8.8.8.8
-example.com
-127.0.0.1
+
+# Example hosts to monitor (one per line).
+# You may provide an optional name followed by the host, e.g.:
+#   localhost 127.0.0.1
+# or just the host/IP alone:
+#   8.8.8.8
+
+localhost 127.0.0.1
+patatrack02 patatrack02.cern.ch
+patatrack03 patatrack03.cern.ch
+patatrack-bg-01 patatrack-bg-01.cern.ch

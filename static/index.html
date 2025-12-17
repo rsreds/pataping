@@ -3,19 +3,25 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Ping Monitor</title>
+    <title>PataPing</title>
     <style>
-      body { font-family: system-ui, -apple-system, Roboto, "Helvetica Neue", Arial; padding: 1rem; }
+      body { font-family: "Helvetica Neue" , "Arial" ; padding: 3rem; display: flex; flex-direction: column; align-items: center; }
       .host { display:flex; align-items:center; gap:12px; padding:8px 0; }
       .label { padding:4px 8px; border-radius:6px; color:white; font-weight:600; }
+      /* host row: two columns
+        - .label-col : fixed width column that right-aligns the status label
+        - .content : flexible column that left-aligns the host/name and meta info
+      */
       .up { background: #16a34a; }
+      .label-col { width: 110px; /* adjust as needed */ display:flex; justify-content:flex-end; }
+      .content { flex:1; text-align:left; }
       .down { background: #dc2626; }
       .error { background: #6b7280; }
       .meta { color:#6b7280; font-size:0.9rem; }
     </style>
   </head>
   <body>
-    <h1>Ping Monitor</h1>
+    <h1>PataPing</h1>
     <p class="meta">Auto-refresh every 10s. Hosts are read from <code>hosts.txt</code> in the repo.</p>
     <div id="last"></div>
     <div id="list"></div>
@@ -33,15 +39,22 @@
             const el = document.createElement('div');
             el.className = 'host';
 
-            const label = document.createElement('div');
-            label.className = 'label ' + (r.status === 'up' ? 'up' : (r.status === 'down' ? 'down' : 'error'));
-            label.textContent = r.status.toUpperCase();
+              const labelCol = document.createElement('div');
+              labelCol.className = 'label-col';
+              const label = document.createElement('div');
+              label.className = 'label ' + (r.status === 'up' ? 'up' : (r.status === 'down' ? 'down' : 'error'));
+              label.textContent = r.status.toUpperCase();
 
-            const txt = document.createElement('div');
-            txt.innerHTML = `<strong>${r.host}</strong>` + (r.latency_ms ? ` &nbsp; <span class="meta">${r.latency_ms} ms</span>` : '');
+              const txt = document.createElement('div');
+              txt.className = 'content';
+              // show name in bold if provided, otherwise show host in bold
+              const displayName = r.name ? r.name : r.host;
+              const hostPart = r.name ? ` <span class="meta">${r.host}</span>` : '';
+              txt.innerHTML = `<strong>${displayName}</strong>${hostPart}` + (r.latency_ms ? ` &nbsp; <span class="meta">${r.latency_ms} ms</span>` : '');
 
-            el.appendChild(label);
-            el.appendChild(txt);
+              labelCol.appendChild(label);
+              el.appendChild(labelCol);
+              el.appendChild(txt);
             list.appendChild(el);
           });
         }catch(e){

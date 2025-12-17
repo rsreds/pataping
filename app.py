@@ -3,7 +3,7 @@ from functools import partial
 from pathlib import Path
 import subprocess
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 
 from flask import Flask, jsonify, send_from_directory
 
@@ -48,19 +48,41 @@ def api_status():
     if not HOSTS_FILE.exists():
         return jsonify({"error": "hosts file not found", "path": str(HOSTS_FILE)}), 500
 
-    hosts = [line.strip() for line in HOSTS_FILE.read_text().splitlines() if line.strip() and not line.strip().startswith("#")]
+    # parse lines that may be either:
+    # - host
+    # - name host
+    raw_lines = [line.strip() for line in HOSTS_FILE.read_text().splitlines() if line.strip() and not line.strip().startswith("#")]
+
+    entries = []
+    for ln in raw_lines:
+        parts = ln.split()
+        if len(parts) >= 2:
+            name = parts[0]
+            host = parts[1]
+        else:
+            name = None
+            host = parts[0]
+        entries.append((name, host))
 
     results = []
-    now = datetime.utcnow().isoformat() + "Z"
+    # use timezone-aware UTC datetime to avoid DeprecationWarning
+    now = datetime.now(timezone.utc).isoformat()
 
+    # Submit futures in the original order and collect results in the same order
     with ThreadPoolExecutor(max_workers=20) as ex:
-        futures = {ex.submit(ping_host, h): h for h in hosts}
-        for fut in as_completed(futures):
+        futures = [ex.submit(ping_host, host) for (name, host) in entries]
+        for i, fut in enumerate(futures):
+            name, host = entries[i]
             try:
-                results.append(fut.result())
+                item = fut.result()
+                # attach name if present
+                if name:
+                    item["name"] = name
+                else:
+                    item.setdefault("name", None)
+                results.append(item)
             except Exception as e:
-                h = futures[fut]
-                results.append({"host": h, "status": "error", "latency_ms": None, "error": str(e)})
+                results.append({"host": host, "name": name, "status": "error", "latency_ms": None, "error": str(e)})
 
     return jsonify({"checked_at": now, "results": results})
 
