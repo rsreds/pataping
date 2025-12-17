@@ -1,0 +1,30 @@
+name: Deploy via SSH (template)
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: |
+          docker build -t ping-monitor:latest .
+
+      # This is a template demonstrating how to SSH to your server and run deployment commands.
+      # It requires you to set secrets: SSH_HOST, SSH_USER, SSH_PRIVATE_KEY
+      - name: Copy files and restart app on server
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            # place your server-side commands here, for example:
+            docker pull myrepo/ping-monitor:latest || true
+            docker stop ping-monitor || true
+            docker rm ping-monitor || true
+            docker run -d --restart=always --name ping-monitor -p 8000:8000 myrepo/ping-monitor:latest

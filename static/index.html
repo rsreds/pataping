@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Ping Monitor</title>
+    <style>
+      body { font-family: system-ui, -apple-system, Roboto, "Helvetica Neue", Arial; padding: 1rem; }
+      .host { display:flex; align-items:center; gap:12px; padding:8px 0; }
+      .label { padding:4px 8px; border-radius:6px; color:white; font-weight:600; }
+      .up { background: #16a34a; }
+      .down { background: #dc2626; }
+      .error { background: #6b7280; }
+      .meta { color:#6b7280; font-size:0.9rem; }
+    </style>
+  </head>
+  <body>
+    <h1>Ping Monitor</h1>
+    <p class="meta">Auto-refresh every 10s. Hosts are read from <code>hosts.txt</code> in the repo.</p>
+    <div id="last"></div>
+    <div id="list"></div>
+
+    <script>
+      async function fetchStatus(){
+        try{
+          const res = await fetch('/api/status');
+          const data = await res.json();
+          document.getElementById('last').textContent = 'Checked at: ' + (data.checked_at || 'n/a');
+
+          const list = document.getElementById('list');
+          list.innerHTML = '';
+          (data.results || []).forEach(r => {
+            const el = document.createElement('div');
+            el.className = 'host';
+
+            const label = document.createElement('div');
+            label.className = 'label ' + (r.status === 'up' ? 'up' : (r.status === 'down' ? 'down' : 'error'));
+            label.textContent = r.status.toUpperCase();
+
+            const txt = document.createElement('div');
+            txt.innerHTML = `<strong>${r.host}</strong>` + (r.latency_ms ? ` &nbsp; <span class="meta">${r.latency_ms} ms</span>` : '');
+
+            el.appendChild(label);
+            el.appendChild(txt);
+            list.appendChild(el);
+          });
+        }catch(e){
+          document.getElementById('list').textContent = 'Error fetching status: ' + e;
+        }
+      }
+
+      fetchStatus();
+      setInterval(fetchStatus, 10000);
+    </script>
+  </body>
+</html>
