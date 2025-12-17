@@ -5,33 +5,147 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>PATAPING</title>
     <style>
-      body { font-family: "Helvetica Neue" , "Arial" ; padding: 3rem; display: flex; flex-direction: column; align-items: center; }
-      .host { display:flex; align-items:center; gap:12px; padding:8px 0; }
-      .label { padding:4px 8px; border-radius:6px; color:white; font-weight:600; }
+      :root{
+        --bg: #ffffff;
+        --fg: #0f172a;
+        --muted: #6b7280;
+        --up: #16a34a;
+        --down: #dc2626;
+        --error: #6b7280;
+        --card-bg: rgba(0,0,0,0.02);
+      }
+      @media (prefers-color-scheme: dark){
+        :root{
+          --bg: #0b1220;
+          --fg: #e6eef8;
+          --muted: #9aa6b2;
+          --up: #22c55e;
+          --down: #fb7185;
+          --error: #94a3b8;
+          --card-bg: rgba(255,255,255,0.03);
+        }
+      }
+
+      [data-theme="dark"]{
+        --bg: #0b1220;
+        --fg: #e6eef8;
+        --muted: #9aa6b2;
+        --up: #22c55e;
+        --down: #fb7185;
+        --error: #94a3b8;
+        --card-bg: rgba(255,255,255,0.03);
+      }
+      [data-theme="light"]{
+        --bg: #ffffff;
+        --fg: #0f172a;
+        --muted: #6b7280;
+        --up: #16a34a;
+        --down: #dc2626;
+        --error: #6b7280;
+        --card-bg: rgba(0,0,0,0.02);
+      }
+
+      body { font-family: "Helvetica Neue", Arial, sans-serif; padding: 3rem; display: flex; flex-direction: column; align-items: center; background: var(--bg); color: var(--fg); }
+      .host { display:flex; align-items:center; align-content: center; gap:12px; padding:8px 0; width: 720px; max-width: calc(100% - 48px); }
+      .label { padding:6px 8px; border-radius:6px; color:white; font-weight:600; display:inline-block; min-width:32px; text-align:center; max-width: fit-content;  }
       /* host row: two columns
         - .label-col : fixed width column that right-aligns the status label
         - .content : flexible column that left-aligns the host/name and meta info
       */
-      .up { background: #16a34a; }
-      .label-col { width: 110px; /* adjust as needed */ display:flex; justify-content:flex-end; }
-      .content { flex:1; text-align:left; }
-      .down { background: #dc2626; }
-      .error { background: #6b7280; }
-      .meta { color:#6b7280; font-size:0.9rem; }
+      .label-col { width: 180px; /* adjust as needed */ display:flex; justify-content:flex-end; }
+      .content { flex:1; text-align:left; background: var(--card-bg); padding:8px 12px; border-radius:6px; }
+      .up { background: var(--up); }
+      .down { background: var(--down); }
+      .error { background: var(--error); }
+      .meta { color:var(--muted); font-size:0.8rem; }
+
+      /* theme toggle button */
+      .theme-toggle { position: fixed; top: 12px; right: 12px; background: transparent; border: 1px solid rgba(0,0,0,0.06); color: var(--fg); padding:6px 10px; border-radius:8px; cursor:pointer; }
+      [data-theme="dark"] .theme-toggle { border-color: rgba(255,255,255,0.06); }
     </style>
   </head>
   <body>
+    <button id="themeToggle" class="theme-toggle" aria-pressed="false">🌓</button>
     <h1>PATAPING</h1>
-    <p class="meta">Auto-refresh every 10s. Hosts are read from <code>hosts.txt</code> in the repo.</p>
+    <p class="meta">Auto-refresh every 30s. Hosts are read from <code>hosts.txt</code> in the repo.</p>
     <div id="last"></div>
     <div id="list"></div>
+    <p class="meta">In case of issues, please write in the <a href="https://mattermost.web.cern.ch/patatrack/channels/town-square" style="color: var(--down); text-decoration: underline;">patatrack</a> mattermost channel</p>
 
     <script>
+      // Theme handling: respect saved choice, otherwise follow prefers-color-scheme
+      const THEME_KEY = 'pataping:theme';
+      function applyTheme(t){
+        if(t){
+          document.documentElement.setAttribute('data-theme', t);
+          document.getElementById('themeToggle').setAttribute('aria-pressed', t === 'dark');
+          document.getElementById('themeToggle').textContent = t === 'dark' ? '🌙' : '☀️';
+        } else {
+          document.documentElement.removeAttribute('data-theme');
+          const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          document.getElementById('themeToggle').setAttribute('aria-pressed', prefersDark);
+          document.getElementById('themeToggle').textContent = prefersDark ? '🌙' : '☀️';
+        }
+      }
+      function initTheme(){
+        const saved = localStorage.getItem(THEME_KEY);
+        if(saved === 'dark' || saved === 'light'){
+          applyTheme(saved);
+        } else {
+          applyTheme(null);
+        }
+      }
+      function toggleTheme(){
+        const cur = document.documentElement.getAttribute('data-theme');
+        if(cur === 'dark'){
+          localStorage.setItem(THEME_KEY, 'light');
+          applyTheme('light');
+        } else if(cur === 'light'){
+          localStorage.setItem(THEME_KEY, 'dark');
+          applyTheme('dark');
+        } else {
+          // no explicit theme -> flip based on prefers
+          const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          const next = prefersDark ? 'light' : 'dark';
+          localStorage.setItem(THEME_KEY, next);
+          applyTheme(next);
+        }
+      }
+      document.addEventListener('DOMContentLoaded', ()=>{
+        const tbtn = document.getElementById('themeToggle');
+        initTheme();
+        tbtn.addEventListener('click', toggleTheme);
+      });
+
       async function fetchStatus(){
         try{
           const res = await fetch('/api/status');
           const data = await res.json();
-          document.getElementById('last').textContent = 'Checked at: ' + (data.checked_at || 'n/a');
+        const lastEl = document.getElementById('last');
+        const raw = data.checked_at;
+        if (raw) {
+            const dt = new Date(raw);
+            if (!isNaN(dt)) {
+                const pad = n => String(n).padStart(2, '0');
+                const day = pad(dt.getDate());
+                const month = pad(dt.getMonth() + 1);
+                const year = dt.getFullYear();
+                const hrs = pad(dt.getHours());
+                const mins = pad(dt.getMinutes());
+                const secs = pad(dt.getSeconds());
+                // if date is not today, show date too
+                const today = new Date();
+                if (dt.toDateString() !== today.toDateString()) {
+                    lastEl.textContent = 'Last update ' + `${day}/${month}/${year} ${hrs}:${mins}:${secs} `;
+                } else {
+                    lastEl.textContent = 'Last update ' + `${hrs}:${mins}:${secs} `;
+                }
+            } else {
+                lastEl.textContent = 'Last update ' + raw;
+            }
+        } else {
+            lastEl.textContent = 'Last update n/a';
+        }
 
           const list = document.getElementById('list');
           list.innerHTML = '';
@@ -63,7 +177,7 @@
       }
 
       fetchStatus();
-      setInterval(fetchStatus, 10000);
+      setInterval(fetchStatus, 30000);
     </script>
   </body>
 </html>

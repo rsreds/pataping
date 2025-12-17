@@ -4,7 +4,7 @@ A minimal Flask web app that reads a list of hosts from `hosts.txt` and pings th
 
 Features
 - Backend: Flask endpoint `/api/status` that returns JSON with host statuses.
-- Frontend: `static/index.html` shows status and auto-refreshes every 10s.
+- Frontend: `static/index.html` shows status and auto-refreshes every 30s.
 - Dockerfile for containerized runs.
 
 ## Quick start (local)
